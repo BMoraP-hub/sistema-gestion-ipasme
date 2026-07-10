@@ -1,0 +1,83 @@
+<!-- 
+  ARCHIVO: mis_tickets.html
+  FUNCIÓN: Panel operativo del técnico especialista. Permite filtrar tickets 
+           asignados a un técnico específico y realizar el cierre técnico 
+           operativo de cada caso.
+-->
+
+{% extends "base.html" %}
+{% block content %}
+<!-- PANEL OPERATIVO DEL TÉCNICO: permite seleccionar un perfil y ver su cola de trabajo asignada. -->
+<div class="app-card mb-4 border-top border-4 border-info">
+  <div class="text-center mb-4">
+    <i class="bi bi-person-workspace text-info" style="font-size: 3rem;"></i>
+    <h2 class="page-title mt-2 fw-bold">Panel de Técnico Especialista (P3)</h2>
+    <p class="text-muted">Consulta tu cola de trabajo y realiza el Cierre Técnico Operativo.</p>
+  </div>
+  
+  <form method="get" class="row justify-content-center mt-4">
+    <div class="col-12 col-md-8 col-lg-6">
+      <div class="input-group input-group-lg shadow-sm">
+        <span class="input-group-text bg-transparent"><i class="bi bi-person-badge"></i></span>
+        <select name="tecnico_id" class="form-select border-start-0" required>
+          <option value="">-- Selecciona tu perfil --</option>
+          {% for tec in tecnicos %}
+          <option value="{{ tec.id_tecnico }}" {% if tecnico_id == tec.id_tecnico %}selected{% endif %}>{{ tec.nombre_completo }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-main px-4 fw-bold">Consultar</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+{% if tecnico_id %}
+<!-- LISTA DE CASOS ASIGNADOS: muestra los tickets pendientes para cerrar operativamente. -->
+<div class="app-card border-top border-4 border-success">
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-3">
+    <h3 class="h5 mb-0 fw-bold text-success"><i class="bi bi-tools me-2"></i>Tus Casos Asignados</h3>
+    <div class="input-group input-group-sm shadow-sm" style="max-width: 300px;">
+      <span class="input-group-text bg-transparent"><i class="bi bi-search"></i></span>
+      <input type="text" class="form-control live-search" data-table="#tabla-mis-tickets" placeholder="Buscar por falla o descripción...">
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table align-middle table-hover m-0" id="tabla-mis-tickets">
+      <thead class="table-dark">
+        <tr>
+          <th>ID Ticket</th>
+          <th>Fecha Asignación</th>
+          <th>Tipo de Falla</th>
+          <th>Descripción</th>
+          <th>Acción a Ejecutar</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ticket in tickets_asignados %}
+        <tr>
+          <td><span class="badge bg-secondary">#{{ ticket.id_ticket }}</span></td>
+          <td>{{ ticket.fecha_hora_reporte.strftime('%Y-%m-%d %H:%M') }}</td>
+          <td class="fw-bold">{{ ticket.tipo_falla }}</td>
+          <td><small class="text-muted">{{ ticket.descripcion_usuario }}</small></td>
+          <td>
+            <a href="{{ url_for('resolver_ticket', id_ticket=ticket.id_ticket) }}" class="btn btn-success btn-sm w-100 shadow-sm fw-bold" onclick="return confirm('¿Confirmas que esta incidencia tecnológica fue resuelta en sitio?');">
+              <i class="bi bi-check-circle-fill me-1"></i> Cerrar Caso
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5" class="text-center text-muted py-5">
+            <i class="bi bi-emoji-sunglasses fs-1 text-success d-block mb-3"></i>
+            <h5 class="fw-bold">¡Excelente trabajo!</h5>
+            <p class="mb-0">No tienes tickets pendientes en tu cola operativa.</p>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

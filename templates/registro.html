@@ -1,0 +1,163 @@
+<!-- 
+  ARCHIVO: registro.html
+  FUNCIÓN: Punto de entrada de incidencias. Permite registrar nuevos requerimientos, 
+           aplicando validación en tiempo real de los campos antes del envío.
+-->
+
+{% extends "base.html" %}
+{% block content %}
+<!-- SECCIÓN DE CAPTURA: formulario para registrar un nuevo requerimiento o incidencia. -->
+<div class="app-card mb-4 border-top border-4 border-primary">
+  <div class="row">
+    <div class="col-12 col-lg-10 mx-auto">
+      <div class="text-center mb-4">
+        <i class="bi bi-headset text-primary" style="font-size: 3rem;"></i>
+        <h2 class="page-title mt-2 fw-bold">Recepción y Captura de Requerimientos (P1)</h2>
+        <p class="text-muted">Sustitución formal de cuadernos físicos del IPASME.</p>
+      </div>
+      
+      <form method="post" class="py-2">
+        <div class="row gy-4">
+          <div class="col-12 col-md-6">
+            <label class="form-label fw-bold">Tipo de Falla / Requerimiento <span class="text-danger">*</span></label>
+            <div class="input-group shadow-sm">
+              <span class="input-group-text bg-transparent"><i class="bi bi-tools"></i></span>
+              <input type="text" name="tipo_falla" class="form-control" placeholder="Ej. Falla de red, Impresora" data-validate="required|min:4" required>
+            </div>
+          </div>
+          
+          <div class="col-12 col-md-6">
+            <label class="form-label fw-bold">Departamento de Origen <span class="text-danger">*</span></label>
+            <div class="input-group shadow-sm">
+              <span class="input-group-text bg-transparent"><i class="bi bi-building"></i></span>
+              <select id="departamento" class="form-select" onchange="fetchTecnicos()" required>
+                <option value="all">-- Seleccionar Departamento --</option>
+                {% for depto in departamentos %}
+                <option value="{{ depto.id_depto }}">{{ depto.nombre_depto }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="col-12">
+            <label class="form-label fw-bold">Descripción Detallada del Problema <span class="text-danger">*</span></label>
+            <textarea name="descripcion_usuario" class="form-control shadow-sm" rows="3" placeholder="Describa la situación reportada detalladamente..." data-validate="required|min:10" required></textarea>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <label class="form-label text-muted">Grupo Técnico (Opcional)</label>
+            <div class="input-group shadow-sm">
+              <span class="input-group-text bg-transparent"><i class="bi bi-collection"></i></span>
+              <select name="grupo" id="grupo" class="form-select" onchange="fetchTecnicos()">
+                <option value="all">-- Todos los Grupos --</option>
+                {% for grupo in grupos %}
+                <option value="{{ grupo.id_grupo }}">{{ grupo.nombre_grupo }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <label class="form-label text-muted">Asignación Directa (Opcional)</label>
+            <div class="input-group shadow-sm">
+              <span class="input-group-text bg-transparent"><i class="bi bi-person-gear"></i></span>
+              <select name="tecnico" id="tecnico" class="form-select">
+                <option value="">-- Dejar en espera para Moderación --</option>
+                {% for tec in tecnicos %}
+                <option value="{{ tec.id_tecnico }}">{{ tec.nombre_completo }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div id="tecnico-error" class="text-danger mt-2 small"></div>
+          </div>
+        </div>
+
+        <div class="mt-5 text-center">
+          <button type="submit" class="btn btn-main btn-lg px-5 fw-bold shadow-sm"><i class="bi bi-send-plus me-2"></i>Registrar Ticket</button>
+        </div>
+      </form> 
+    </div>
+  </div>
+</div>
+
+<!-- SECCIÓN DE COLA DE ESPERA: muestra los tickets abiertos para seguimiento y revisión. -->
+<div class="app-card border-top border-4 border-warning">
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-3">
+    <h3 class="h5 mb-0 fw-bold text-warning text-darken"><i class="bi bi-hourglass-split me-2"></i>Tickets en Cola (Abiertos)</h3>
+    <div class="input-group input-group-sm shadow-sm" style="max-width: 300px;">
+      <span class="input-group-text bg-transparent"><i class="bi bi-search"></i></span>
+      <input type="text" class="form-control live-search" data-table="#tabla-abiertos" placeholder="Buscar Caso...">
+    </div>
+  </div>
+  
+  <div class="table-responsive">
+    <table class="table align-middle table-hover m-0" id="tabla-abiertos">
+      <thead class="table-light">
+        <tr>
+          <th>ID</th>
+          <th>Fecha/Hora</th>
+          <th>Tipo de Falla</th>
+          <th>Descripción</th>
+          <th>Estado</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ticket in tickets_abiertos %}
+        <tr>
+          <td><span class="badge bg-secondary">#{{ ticket.id_ticket }}</span></td>
+          <td>{{ ticket.fecha_hora_reporte.strftime('%Y-%m-%d %H:%M') }}</td>
+          <td class="fw-bold">{{ ticket.tipo_falla }}</td>
+          <td><small class="text-muted">{{ ticket.descripcion_usuario }}</small></td>
+          <td><span class="badge bg-warning text-dark"><i class="bi bi-unlock-fill me-1"></i>{{ ticket.estado_operacional }}</span></td>
+          <td>
+            <form method="post" action="{{ url_for('eliminar_asignacion', id_ticket=ticket.id_ticket) }}" onsubmit="return confirm('¿Deseas eliminar este ticket abierto?');">
+              <input type="hidden" name="next" value="{{ url_for('registro') }}">
+              <button type="submit" class="btn btn-sm btn-outline-danger w-100 shadow-sm"><i class="bi bi-trash3"></i> Borrar</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="text-center text-muted py-4">
+            <i class="bi bi-check2-all fs-2 text-success d-block mb-2"></i>
+            No hay tickets pendientes en la cola de espera.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- SCRIPT DE ACTUALIZACIÓN: consulta la API de técnicos según departamento y grupo seleccionados. -->
+<script>
+async function fetchTecnicos() {
+  const departamento = document.getElementById('departamento').value;
+  const grupo = document.getElementById('grupo').value;
+  const tecnicoSel = document.getElementById('tecnico');
+  const errorContainer = document.getElementById('tecnico-error');
+
+  errorContainer.textContent = '';
+  const params = new URLSearchParams();
+  if (departamento && departamento !== 'all') params.set('departamento', departamento);
+  if (grupo && grupo !== 'all') params.set('grupo', grupo);
+
+  try {
+    const respuesta = await fetch(`/api/tecnicos?${params.toString()}`);
+    if (!respuesta.ok) throw new Error('No se pudo cargar los técnicos');
+    
+    const tecnicos = await respuesta.json();
+    tecnicoSel.innerHTML = '<option value=\"\">-- Dejar en espera para Moderación --</option>';
+    tecnicos.forEach((tecnico) => {
+      const option = document.createElement('option');
+      option.value = tecnico.id_tecnico;
+      option.textContent = tecnico.nombre_completo;
+      tecnicoSel.appendChild(option);
+    });
+  } catch (error) {
+    errorContainer.textContent = 'Error al actualizar la lista.';
+  }
+}
+</script>
+{% endblock %}

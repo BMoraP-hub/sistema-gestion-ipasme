@@ -1,0 +1,86 @@
+<!-- 
+  ARCHIVO: base.html
+  FUNCIÓN: Plantilla maestra que define la estructura global, el membrete (header), 
+           la carga de librerías (Bootstrap, DataTables, Chart.js) y la gestión 
+           de notificaciones flotantes (Toast) para todo el sistema.
+-->
+           
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sistema de Registro de Casos para Soporte. IPASME</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/favicon.svg') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/styles.css') }}" rel="stylesheet">
+    <style>
+        /* Ajuste para iconos cuadrados y compactos */
+        .btn-square { width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; padding: 0 !important; }
+        .nav-text-btn { display: flex; align-items: center; gap: 6px; }
+    </style>
+  </head>
+  <body>
+    <div class="container py-4">
+      {% if request.endpoint not in ['login', 'super_login'] %}
+      <!-- ENCABEZADO PRINCIPAL: muestra la navegación del sistema y los accesos rápidos según el tipo de usuario. -->
+      <header class="app-header mb-4 shadow-sm">
+        <div class="d-flex flex-column flex-lg-row align-items-center justify-content-between gap-3">
+          
+          <div class="d-flex align-items-center gap-3 w-100">
+            <img src="{{ url_for('static', filename='img/logo_ipasme.png') }}" alt="IPASME" style="max-height: 50px;" onerror="this.outerHTML='<div class=\'icon-box icon-box-sm m-0\'><i class=\'bi bi-building\'></i></div>'">
+            <div>
+              <h1 class="h6 mb-0 fw-bold text-primary">IPASME</h1>
+              <small class="text-muted d-none d-sm-block" style="font-size: 0.75rem;">Instituto de Previsión y Asistencia Social para el personal del Ministerio de Educación</small>
+              <small class="text-muted d-none d-sm-block" style="font-size: 0.75rem;">Sistema de Gestión de Casos</small>
+            </div>
+          </div>
+
+          {% if session.get('user') %}
+          <div class="d-flex align-items-center gap-2">
+            <!-- Botones con texto -->
+            <a class="btn btn-sm btn-outline-dark nav-text-btn {% if active == 'registro' %}active{% endif %}" href="{{ url_for('registro') }}"><i class="bi bi-pencil-square"></i> Recepción</a>
+            <a class="btn btn-sm btn-outline-dark nav-text-btn {% if active == 'mis_tickets' %}active{% endif %}" href="{{ url_for('mis_tickets') }}"><i class="bi bi-tools"></i> Tickets</a>
+            <a class="btn btn-sm btn-outline-dark nav-text-btn {% if active == 'base-datos' %}active{% endif %}" href="{{ url_for('base_datos') }}"><i class="bi bi-bar-chart-line-fill"></i> Dashboard</a>
+            <a class="btn btn-sm btn-outline-dark nav-text-btn {% if active == 'moderacion' %}active{% endif %}" href="{{ url_for('moderacion') }}"><i class="bi bi-diagram-3-fill"></i> Moderación</a>
+            
+            <div class="vr mx-1 text-secondary"></div>
+            
+            <!-- Botones especiales (Cuadrados) -->
+            {% if session.get('user_type') == 'super' %}
+            <a class="btn btn-sm btn-outline-danger btn-square" href="{{ url_for('backup_db') }}" title="Respaldo BD" onclick="return confirm('¿Descargar respaldo?');"><i class="bi bi-database-down"></i></a>
+            {% endif %}
+            
+            <button id="theme-toggle" class="btn btn-sm btn-outline-secondary btn-square" title="Tema"><i class="bi bi-moon-stars-fill"></i></button>
+            <a href="{{ url_for('logout') }}" class="btn btn-sm btn-danger btn-square" title="Salir"><i class="bi bi-box-arrow-right"></i></a>
+          </div>
+          {% endif %}
+        </div>
+      </header>
+      {% endif %}
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <div id="flash-messages" style="display:none;">
+        {% for category, message in messages %}
+        <div class="flash-message-hidden" data-category="{{ category }}" data-message="{{ message|e }}"></div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% endwith %}
+
+      <div id="toast-container"></div>
+      <!-- BLOQUE DE CONTENIDO: cada plantilla hija inserta aquí su interfaz específica. -->
+      {% block content %}{% endblock %}
+    </div>
+    
+    <!-- LIBRERÍAS Y SCRIPTS GLOBALES: Bootstrap, DataTables, Chart y el script propio del sistema. -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  </body>
+</html>

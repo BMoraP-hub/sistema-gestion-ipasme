@@ -1,0 +1,165 @@
+<!-- 
+  ARCHIVO: moderacion.html
+  FUNCIÓN: Centro de comando del supervisor. Permite asignar tickets pendientes 
+           a especialistas, gestionar la disponibilidad técnica diaria y 
+           ejecutar respaldos de la base de datos.
+-->
+
+{% extends "base.html" %}
+{% block content %}
+<!-- BARRA DE NAVEGACIÓN DE MODERACIÓN: permite cambiar entre inicio, asignación de casos y gestión de técnicos. -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('moderacion') }}" class="btn btn-outline-secondary{% if section == 'home' %} active{% endif %}"><i class="bi bi-house-door"></i> Inicio</a>
+    <a href="{{ url_for('moderacion', section='casos') }}" class="btn btn-outline-secondary{% if section == 'casos' %} active{% endif %}"><i class="bi bi-diagram-3"></i> Asignar Tickets</a>
+    <a href="{{ url_for('tecnicos', from_moderacion='1') }}" class="btn btn-outline-secondary"><i class="bi bi-people"></i> Técnicos</a>
+  </div>
+  <div class="d-flex align-items-center gap-2">
+    {% if section == 'home' %}
+    <a href="{{ url_for('index') }}" class="btn btn-main btn-sm shadow-sm"><i class="bi bi-arrow-left"></i> Volver</a>
+    {% else %}
+    <a href="{{ url_for('moderacion') }}" class="btn btn-main btn-sm shadow-sm"><i class="bi bi-arrow-left"></i> Volver</a>
+    {% endif %}
+  </div>
+</div>
+
+{% if section == 'home' %}
+<!-- PANEL PRINCIPAL DE MODERACIÓN: ofrece acceso rápido a asignación, gestión de personal y respaldo de la base de datos. -->
+<div class="app-card text-center py-5 border-top border-4 border-primary shadow-sm">
+  <i class="bi bi-diagram-3 text-primary mb-3" style="font-size: 3.5rem;"></i>
+  <h2 class="page-title fw-bold">Moderación de Casos (P2)</h2>
+  <p class="text-muted">Panel táctico para gestionar la cola de trabajo y distribuir la carga operativa.</p>
+  
+  <div class="d-flex flex-column flex-md-row justify-content-center gap-3 mt-5">
+    <a href="{{ url_for('moderacion', section='casos') }}" class="btn btn-main btn-lg px-4 py-3 d-flex flex-column align-items-center gap-2 shadow-sm" style="min-width: 210px;">
+      <i class="bi bi-inbox-fill fs-2"></i>
+      <span class="fw-bold">Asignar Pendientes</span>
+    </a>
+    
+    <a href="{{ url_for('tecnicos', from_moderacion='1') }}" class="btn btn-outline-dark btn-lg px-4 py-3 d-flex flex-column align-items-center gap-2 shadow-sm" style="min-width: 210px;">
+      <i class="bi bi-person-badge-fill fs-2"></i>
+      <span class="fw-bold">Gestionar Personal</span>
+    </a>
+    
+    <!-- Botón de Respaldo Integrado al Menú -->
+    {% if session.user_type == 'super' %}
+    <a href="{{ url_for('backup_db') }}" class="btn btn-outline-danger btn-lg px-4 py-3 d-flex flex-column align-items-center gap-2 shadow-sm" style="min-width: 210px;" onclick="return confirm('¿Descargar una copia de seguridad de la base de datos actual?');">
+      <i class="bi bi-database-down fs-2"></i>
+      <span class="fw-bold">Respaldar BD</span>
+    </a>
+    {% endif %}
+  </div>
+</div>
+
+{% elif section == 'casos' %}
+<!-- PANEL DE ASIGNACIÓN DE TICKETS: permite asignar casos abiertos a especialistas y revisar la carga diaria. -->
+<div class="app-card mb-4 border-top border-4 border-danger shadow-sm">
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-3">
+    <h3 class="h5 fw-bold text-danger mb-0"><i class="bi bi-inbox-fill me-2"></i>Tickets en Cola por Asignar</h3>
+    <div class="input-group input-group-sm shadow-sm" style="max-width: 350px;">
+      <span class="input-group-text bg-transparent"><i class="bi bi-search"></i></span>
+      <input type="text" class="form-control live-search" data-table="#tabla-tickets" placeholder="Buscar falla, usuario o ID...">
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table align-middle table-hover m-0" id="tabla-tickets">
+      <thead class="table-dark">
+        <tr>
+          <th>ID</th>
+          <th>Falla Reportada</th>
+          <th>Descripción</th>
+          <th>Especialista a Asignar</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ticket in tickets_abiertos %}
+        <tr>
+          <td><span class="badge bg-secondary">#{{ ticket.id_ticket }}</span></td>
+          <td class="fw-bold">{{ ticket.tipo_falla }}</td>
+          <td><small class="text-muted">{{ ticket.descripcion_usuario }}</small></td>
+          <td>
+            <form method="post" action="{{ url_for('moderacion', section='casos') }}" class="d-flex flex-column gap-2">
+              <input type="hidden" name="id_ticket" value="{{ ticket.id_ticket }}">
+              <select name="id_tecnico" class="form-select form-select-sm shadow-sm" required>
+                <option value="">-- Seleccionar --</option>
+                {% for item in tecnico_counts %}
+                <option value="{{ item.tecnico.id_tecnico }}">
+                  {{ item.tecnico.nombre_completo }} (Carga: {{ item.casos_hoy }})
+                </option>
+                {% endfor %}
+              </select>
+              <button type="submit" class="btn btn-sm btn-main w-100 shadow-sm"><i class="bi bi-send-check"></i> Asignar</button>
+            </form>
+          </td>
+          <td>
+            <form method="post" action="{{ url_for('eliminar_asignacion', id_ticket=ticket.id_ticket) }}" onsubmit="return confirm('¿Deseas eliminar este ticket abierto?');">
+              <input type="hidden" name="next" value="{{ url_for('moderacion', section='casos') }}">
+              <button type="submit" class="btn btn-sm btn-outline-danger w-100 shadow-sm"><i class="bi bi-trash3"></i> Borrar</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5" class="text-center text-muted py-5">
+            <i class="bi bi-check-circle fs-1 text-success d-block mb-3"></i>
+            Excelente, no hay tickets pendientes en la cola.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- PANEL DE DISPONIBILIDAD TÉCNICA CON BUSCADOR -->
+<div class="app-card border-top border-4 border-info shadow-sm">
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-3">
+    <h3 class="h5 fw-bold mb-0"><i class="bi bi-person-lines-fill me-2"></i>Disponibilidad Técnica</h3>
+    <div class="d-flex gap-2">
+      <div class="input-group input-group-sm shadow-sm">
+        <span class="input-group-text bg-transparent"><i class="bi bi-search"></i></span>
+        <input type="text" class="form-control live-search" data-table="#tabla-disponibilidad" placeholder="Buscar técnico...">
+      </div>
+      <form method="get" class="d-flex gap-2 align-items-center m-0">
+        <input type="hidden" name="section" value="casos">
+        <input type="date" name="fecha" class="form-control form-control-sm w-auto shadow-sm" value="{{ fecha_actual }}">
+        <button type="submit" class="btn btn-secondary btn-sm shadow-sm"><i class="bi bi-calendar-event"></i></button>
+      </form>
+    </div>
+  </div>
+  <div class="table-responsive">
+    <table class="table align-middle table-hover m-0" id="tabla-disponibilidad">
+      <thead class="table-light">
+        <tr>
+          <th>Técnico</th>
+          <th>Departamento</th>
+          <th>Grupo</th>
+          <th>Casos Hoy</th>
+          <th>Asignación Manual</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in tecnico_counts %}
+        <tr>
+          <td class="fw-bold">{{ item.tecnico.nombre_completo }}</td>
+          <td>{{ item.tecnico.departamento.nombre_depto }}</td>
+          <td><span class="badge bg-info text-dark">{{ item.tecnico.grupo.nombre_grupo }}</span></td>
+          <td>
+            <span class="badge {% if item.casos_hoy > 3 %}bg-danger{% elif item.casos_hoy > 1 %}bg-warning text-dark{% else %}bg-success{% endif %} fs-6">
+              {{ item.casos_hoy }}
+            </span>
+          </td>
+          <td>
+            <a href="{{ url_for('ajustar_asignaciones', id_tecnico=item.tecnico.id_tecnico, action='remove', fecha=fecha_actual) }}" class="btn btn-sm btn-outline-danger shadow-sm {% if item.casos_hoy == 0 %} disabled{% endif %}" title="Restar caso">-</a>
+            <a href="{{ url_for('ajustar_asignaciones', id_tecnico=item.tecnico.id_tecnico, action='add', fecha=fecha_actual) }}" class="btn btn-sm btn-outline-success ms-2 shadow-sm" title="Añadir directo">+</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

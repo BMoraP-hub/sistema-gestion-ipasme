@@ -1,0 +1,287 @@
+/* 
+  ARCHIVO: styles.css
+  FUNCIÓN: Define el sistema de diseño (Design System) basado en la identidad 
+           corporativa del IPASME. Implementa variables CSS para colores, 
+           tipografía, sombras (Glassmorphism) y reglas de adaptación para 
+           el Modo Oscuro/Claro (Dark Mode).
+  
+  COMPONENTES:
+    - Variables Globales: Paleta de colores institucional IPASME (#0b63a7).
+    - Modo Oscuro: Sobrescribe estilos de Bootstrap para mantener consistencia.
+    - Glassmorphism: Estilo de tarjetas con desenfoque (backdrop-filter) y bordes superiores azules.
+    - Tablas y Formularios: Reglas de alta prioridad (!important) para forzar la 
+      adaptación visual en inputs, selects y tablas de datos.
+*/
+
+/* =========================================
+   VARIABLES GLOBALES (Paleta IPASME)
+========================================= */
+:root {
+  --bg-color: #f4f7f6;
+  --text-color: #2c3e50;
+  --text-muted: #6c757d;
+  --card-bg: rgba(255, 255, 255, 0.95);
+  --card-border: rgba(11, 99, 167, 0.15);
+  
+  /* Paleta IPASME */
+  --ipasme-blue: #0b63a7;
+  --ipasme-blue-light: #e6f0fa;
+  --ipasme-blue-dark: #08497d;
+  --accent-color: #e0725a;
+  
+  --glass-shadow: 0 8px 24px rgba(11, 99, 167, 0.08);
+  
+  /* Tablas y Formularios */
+  --table-bg: transparent;
+  --table-header-bg: #f8f9fa;
+  --table-header-color: #2c3e50;
+  --table-border: #dee2e6;
+  --input-bg: #ffffff;
+}
+
+/* =========================================
+   MODO OSCURO INTELIGENTE
+========================================= */
+[data-theme="dark"] {
+  --bg-color: #0b1120; /* Azul muy oscuro/elegante */
+  --text-color: #f1f5f9;
+  --text-muted: #94a3b8;
+  --card-bg: rgba(30, 41, 59, 0.85);
+  --card-border: rgba(56, 189, 248, 0.2);
+  
+  --ipasme-blue: #38bdf8;
+  --ipasme-blue-light: rgba(56, 189, 248, 0.15);
+  --ipasme-blue-dark: #0ea5e9;
+  
+  --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  
+  --table-header-bg: rgba(15, 23, 42, 0.9);
+  --table-header-color: #f1f5f9;
+  --table-border: #334155;
+  --input-bg: #1e293b;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+#toast-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 360px;
+}
+
+.custom-toast {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  background: rgba(255, 255, 255, 0.96);
+  color: #212529;
+  padding: 1rem 1.1rem;
+  border-radius: 16px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.12);
+  border-left: 5px solid transparent;
+  overflow: hidden;
+  opacity: 1;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+.custom-toast .bi {
+  font-size: 1.35rem;
+}
+
+.toast-fade-out {
+  opacity: 0;
+  transform: translateX(16px);
+}
+
+[data-theme="dark"] .custom-toast {
+  background: rgba(15, 23, 42, 0.95);
+  color: #f8fafc;
+}
+
+/* Forzar sobreescritura de fondos blancos de Bootstrap en Modo Oscuro */
+[data-theme="dark"] .bg-light, 
+[data-theme="dark"] .bg-white,
+[data-theme="dark"] .alert-warning {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+  color: var(--text-color) !important;
+  border-color: var(--card-border) !important;
+}
+
+/* Textos adaptables */
+h1, h2, h3, h4, h5, h6, .page-title { color: var(--text-color) !important; }
+.text-muted, small.text-muted { color: var(--text-muted) !important; }
+
+/* =========================================
+   DISEÑO DE TARJETAS (Glassmorphism)
+========================================= */
+.app-header {
+  background: var(--card-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--card-border);
+  border-bottom: 4px solid var(--ipasme-blue) !important;
+  border-radius: 16px;
+  box-shadow: var(--glass-shadow);
+  padding: 16px 24px;
+}
+
+.app-card {
+  background: var(--card-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--card-border);
+  border-top: 4px solid var(--ipasme-blue) !important; 
+  border-radius: 16px;
+  box-shadow: var(--glass-shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.3s ease;
+  padding: 28px;
+  margin-bottom: 24px;
+}
+
+.app-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
+}
+[data-theme="dark"] .app-card:hover {
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6);
+}
+
+/* =========================================
+   ICONOS PREMIUM (Cajitas Suaves)
+========================================= */
+.icon-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background-color: var(--ipasme-blue-light);
+  color: var(--ipasme-blue);
+  font-size: 1.8rem;
+  margin-bottom: 12px;
+  transition: transform 0.3s ease;
+}
+.app-card:hover .icon-box {
+  transform: scale(1.1) rotate(-5deg);
+}
+.icon-box-sm {
+  width: 36px; height: 36px; font-size: 1.2rem; margin-bottom: 0;
+}
+
+/* =========================================
+   BOTONES E INPUTS
+========================================= */
+.btn-main {
+  background-color: var(--ipasme-blue);
+  color: #ffffff !important;
+  border: none;
+  font-weight: 600;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+.btn-main:hover {
+  background-color: var(--ipasme-blue-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(11, 99, 167, 0.3);
+}
+
+.btn-outline-dark, .btn-outline-secondary {
+  color: var(--text-color);
+  border-color: var(--card-border);
+  border-radius: 8px;
+  font-weight: 500;
+}
+.btn-outline-dark:hover, .btn-outline-dark.active {
+  background-color: var(--ipasme-blue-light);
+  color: var(--ipasme-blue);
+  border-color: var(--ipasme-blue);
+}
+
+.form-control, .form-select, .input-group-text {
+  background-color: var(--input-bg);
+  color: var(--text-color);
+  border-color: var(--table-border);
+  border-radius: 8px;
+}
+.form-control:focus, .form-select:focus {
+  background-color: var(--input-bg);
+  color: var(--text-color);
+  border-color: var(--ipasme-blue);
+  box-shadow: 0 0 0 0.25rem var(--ipasme-blue-light);
+}
+.input-group-text { font-size: 1.1rem; }
+
+/* =========================================
+   TABLAS ADAPTABLES
+========================================= */
+.table { color: var(--text-color); border-color: var(--table-border); }
+.table-light, .table-dark {
+  background-color: var(--table-header-bg) !important;
+  color: var(--table-header-color) !important;
+  border-bottom: 2px solid var(--table-border);
+}
+.table-light th, .table-dark th {
+  background-color: var(--table-header-bg) !important;
+  color: var(--table-header-color) !important;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+}
+.table-hover tbody tr:hover {
+  background-color: var(--ipasme-blue-light) !important;
+  color: var(--text-color) !important;
+}
+
+/* Rayado de tablas solucionado para oscuros */
+.table-striped>tbody>tr:nth-of-type(odd)>* {
+  color: var(--text-color);
+  background-color: rgba(0, 0, 0, 0.02);
+}
+[data-theme="dark"] .table-striped>tbody>tr:nth-of-type(odd)>* {
+  background-color: rgba(255, 255, 255, 0.02) !important;
+  color: var(--text-color) !important;
+}
+
+/* Colores unificados de insignias */
+.text-primary, .text-info, .text-success, .text-warning, .text-danger {
+  color: var(--ipasme-blue) !important;
+}
+
+/* Unificar tamaño de iconos en barra superior */
+.app-header .btn i {
+  font-size: 1.1rem;
+  margin: 0 !important;
+}
+
+/* Evitar que el texto del botón se estire */
+.nav-btn {
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Asegura que los botones cuadrados se mantengan perfectos */
+.btn-square {
+  width: 38px !important;
+  height: 38px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+}
+
+/* Alineación de iconos dentro de botones con texto */
+.nav-text-btn i { font-size: 1rem; }

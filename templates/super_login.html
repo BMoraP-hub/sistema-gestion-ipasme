@@ -1,0 +1,44 @@
+<!-- 
+  ARCHIVO: super_login.html
+  FUNCIÓN: Portal de acceso restringido para Super Usuarios (Administradores). 
+           Proporciona privilegios elevados para las funciones de moderación y respaldo.
+-->
+
+{% extends "base.html" %}
+{% block content %}
+<!-- ACCESO RESTRINGIDO PARA SUPER USUARIOS: habilita funciones administrativas y de moderación. -->
+<div class="row justify-content-center align-items-center" style="min-height: 80vh;">
+  <div class="col-12 col-md-8 col-lg-5">
+    <div class="app-card text-center p-4 p-md-5 border-top border-danger border-4">
+      <div class="mb-4">
+        <i class="bi bi-shield-fill-check text-danger" style="font-size: 4rem;"></i>
+        <h2 class="fw-bold mt-3">Super Usuario</h2>
+        <p class="text-muted">Panel de Moderación y Administración</p>
+      </div>
+      <form method="post">
+        <input type="hidden" name="next" value="{{ next or '' }}">
+        <div class="mb-3 text-start">
+          <label class="form-label fw-bold text-danger">Usuario Admin</label>
+          <div class="input-group shadow-sm">
+            <span class="input-group-text bg-transparent border-danger-subtle"><i class="bi bi-person text-danger"></i></span>
+            <input type="text" name="username" class="form-control form-control-lg border-danger-subtle" placeholder="Usuario administrador" autofocus required>
+          </div>
+        </div>
+        <div class="mb-4 text-start">
+          <label class="form-label fw-bold text-danger">Clave Admin</label>
+          <div class="input-group shadow-sm">
+            <span class="input-group-text bg-transparent border-danger-subtle"><i class="bi bi-key text-danger"></i></span>
+            <input type="password" name="password" class="form-control form-control-lg border-danger-subtle" placeholder="Clave de seguridad" required>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-danger btn-lg w-100 py-2 fw-bold shadow-sm">Acceso Autorizado</button>
+      </form>
+      <div class="mt-4 pt-3 border-top border-secondary-subtle">
+        <a href="{{ url_for('login') }}" class="text-decoration-none text-muted small">
+          <i class="bi bi-arrow-left me-1"></i> Volver al Login Normal
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

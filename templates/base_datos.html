@@ -1,0 +1,239 @@
+<!-- 
+  ARCHIVO: base_datos.html
+  FUNCIÓN: Dashboard gerencial. Visualiza métricas de productividad mediante 
+           gráficas de dona (Chart.js), tablas históricas con paginación 
+           (DataTables) y opciones de exportación (PDF/Excel).
+-->
+
+{% extends "base.html" %}
+{% block content %}
+<!-- CABECERA DEL DASHBOARD: presenta el título del módulo y los botones de exportación. -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start mb-4 gap-3">
+  <div>
+    <h2 class="page-title fw-bold">Métricas de Productividad y Auditoría (P4)</h2>
+    <p class="mb-1 text-muted">Panel gerencial para evaluar el rendimiento técnico.</p>
+  </div>
+  <div class="d-flex flex-wrap gap-2 align-items-center">
+    <!-- BOTONES DE EXPORTACIÓN (PDF Y EXCEL) -->
+    <a href="{{ url_for('export_pdf', tipo=view, departamento=filter_depto, grupo=filter_grupo, fecha=filter_fecha, fecha_manual=filter_fecha_manual, asignados=filter_asignados) }}" class="btn btn-danger shadow-sm fw-bold">
+      <i class="bi bi-file-earmark-pdf-fill me-1"></i> PDF
+    </a>
+    <a href="{{ url_for('export_excel', tipo=view, departamento=filter_depto, grupo=filter_grupo, fecha=filter_fecha, fecha_manual=filter_fecha_manual) }}" class="btn btn-success shadow-sm fw-bold">
+      <i class="bi bi-file-earmark-excel-fill me-1"></i> Excel
+    </a>
+  </div>
+</div>
+
+<!-- TARJETA DE FILTROS: permite ajustar el rango temporal y segmentar la información por departamento o grupo. -->
+<div class="app-card mb-4 border-top border-4 border-secondary shadow-sm">
+  <form method="get" class="row gx-3 gy-3 align-items-end">
+    <div class="col-12 col-md-3">
+      <label class="form-label fw-bold">Departamento</label>
+      <div class="input-group shadow-sm">
+        <span class="input-group-text bg-transparent"><i class="bi bi-building"></i></span>
+        <select name="departamento" class="form-select">
+          <option value="all" {% if filter_depto == 'all' %}selected{% endif %}>-- Todos --</option>
+          {% for depto in departamentos %}
+          <option value="{{ depto.id_depto }}" {% if filter_depto == depto.id_depto|string %}selected{% endif %}>{{ depto.nombre_depto }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    
+    <div class="col-12 col-md-3">
+      <label class="form-label fw-bold">Grupo Técnico</label>
+      <div class="input-group shadow-sm">
+        <span class="input-group-text bg-transparent"><i class="bi bi-collection"></i></span>
+        <select name="grupo" class="form-select">
+          <option value="all" {% if filter_grupo == 'all' %}selected{% endif %}>-- Todos --</option>
+          {% for grupo in grupos %}
+          <option value="{{ grupo.id_grupo }}" {% if filter_grupo == grupo.id_grupo|string %}selected{% endif %}>{{ grupo.nombre_grupo }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-3">
+      <label class="form-label fw-bold">Periodo de Auditoría</label>
+      <div class="input-group shadow-sm">
+        <span class="input-group-text bg-transparent"><i class="bi bi-calendar3"></i></span>
+        <select name="fecha" class="form-select" onchange="document.getElementById('fecha_manual_container').style.display = this.value === 'manual' ? 'block' : 'none'">
+          <option value="all" {% if filter_fecha == 'all' %}selected{% endif %}>Histórico Completo</option>
+          <option value="today" {% if filter_fecha == 'today' %}selected{% endif %}>Productividad de Hoy</option>
+          <option value="week" {% if filter_fecha == 'week' %}selected{% endif %}>Últimos 7 días</option>
+          <option value="month" {% if filter_fecha == 'month' %}selected{% endif %}>Este Mes</option>
+          <option value="year" {% if filter_fecha == 'year' %}selected{% endif %}>Este Año</option>
+          <option value="manual" {% if filter_fecha == 'manual' %}selected{% endif %}>Fecha Específica</option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="col-12 col-md-2" id="fecha_manual_container" style="display: {% if filter_fecha == 'manual' %}block{% else %}none{% endif %};">
+      <label class="form-label fw-bold">Elegir Fecha</label>
+      <input type="date" name="fecha_manual" class="form-control shadow-sm" value="{{ filter_fecha_manual }}">
+    </div>
+
+    <div class="col-12 col-md-auto ms-auto">
+      <button type="submit" class="btn btn-dark w-100 shadow-sm fw-bold"><i class="bi bi-funnel-fill me-1"></i> Filtrar</button>
+    </div>
+  </form>
+</div>
+
+{% if view == 'resumen' %}
+<!-- VISTA DE RESUMEN: muestra la productividad individual y una gráfica de distribución de carga. -->
+<div class="row gy-4">
+  <div class="col-12 col-lg-7">
+    <div class="app-card h-100 border-top border-4 border-primary shadow-sm">
+      <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+        <h3 class="h5 fw-bold mb-0 text-primary"><i class="bi bi-person-lines-fill me-2"></i>Productividad Individual</h3>
+        <!-- BUSCADOR EN VIVO -->
+        <div class="input-group input-group-sm shadow-sm" style="max-width: 250px;">
+          <span class="input-group-text bg-transparent"><i class="bi bi-search"></i></span>
+          <input type="text" class="form-control live-search" data-table="#tabla-resumen" placeholder="Buscar especialista...">
+        </div>
+      </div>
+      
+      <div class="table-responsive">
+        <table class="table align-middle table-hover" id="tabla-resumen">
+          <thead class="table-light">
+            <tr>
+              <th>Funcionario Especialista</th>
+              <th class="text-center" style="width: 120px;">Estadística</th>
+              <th class="text-center">Progreso Operativo</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for fila in asignados %}
+            <!-- CÁLCULO DE PROGRESS BAR -->
+            {% set total = fila.tecnico.asignados + fila.tecnico.resueltos %}
+            {% set porcentaje = (fila.tecnico.resueltos / total * 100)|round|int if total > 0 else 0 %}
+            <tr>
+              <td class="fw-bold">{{ fila.tecnico.nombre_completo }}</td>
+              <td class="text-center">
+                <span class="badge bg-warning text-dark me-1" title="En Cola (Pendiente)">{{ fila.tecnico.asignados }}</span>
+                <span class="badge bg-success" title="Resueltos">{{ fila.tecnico.resueltos }}</span>
+              </td>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <div class="progress-wrap flex-grow-1" style="background: var(--card-border);">
+                    <div class="progress-bar" role="progressbar" data-value="{{ porcentaje }}"></div>
+                  </div>
+                  <small class="text-muted fw-bold">{{ porcentaje }}%</small>
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="3" class="text-center text-muted py-5"><i class="bi bi-bar-chart-steps fs-1 d-block mb-3 text-secondary"></i>No hay datos para mostrar en este filtro.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-lg-5">
+    <div class="app-card h-100 border-top border-4 border-info shadow-sm">
+      <h3 class="h5 mb-4 fw-bold text-info"><i class="bi bi-pie-chart-fill me-2"></i>Distribución de la Carga</h3>
+      <!-- CONTENEDOR CORREGIDO PARA EVITAR BUCLE DE CHART.JS -->
+      <div style="position: relative; height: 350px; width: 100%;">
+        <canvas id="statsPieChart" {% if not chart_labels or not chart_values %}style="display:none;"{% endif %}></canvas>
+        {% if not chart_labels or not chart_values %}
+        <div class="h-100 d-flex align-items-center justify-content-center text-center text-muted" style="position:absolute; inset:0;">
+          <div>
+            <i class="bi bi-bar-chart-line fs-1 mb-3"></i>
+            <p class="mb-0">No hay datos suficientes para generar el gráfico en este filtro.</p>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% else %}
+<!-- VISTA HISTÓRICA: expone el registro transaccional de asignaciones y cierres por técnico. -->
+<div class="app-card border-top border-4 border-success shadow-sm">
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <h3 class="h5 fw-bold mb-0 text-success"><i class="bi bi-clock-history me-2"></i>Registro Transaccional Histórico</h3>
+    <!-- BUSCADOR EN VIVO -->
+    <div class="input-group input-group-sm shadow-sm" style="max-width: 300px;">
+      <span class="input-group-text bg-transparent"><i class="bi bi-search"></i></span>
+      <input type="text" class="form-control live-search" data-table="#tabla-historial" placeholder="Buscar técnico, depto o fecha...">
+    </div>
+  </div>
+  
+  <div class="table-responsive">
+    <table class="table align-middle table-striped table-hover m-0" id="tabla-historial">
+      <thead class="table-dark">
+        <tr>
+          <th>Fecha de Operación</th>
+          <th>Técnico Responsable</th>
+          <th>Departamento</th>
+          <th>Grupo</th>
+          <th class="text-center">Volumen de Tickets</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for fila in asignaciones %}
+        <tr>
+          <td>{{ fila.fecha }}</td>
+          <td class="fw-bold">{{ fila.tecnico.nombre_completo }}</td>
+          <td>{{ fila.departamento }}</td>
+          <td><span class="badge bg-info text-dark shadow-sm">{{ fila.grupo }}</span></td>
+          <td class="text-center"><span class="badge bg-primary rounded-pill fs-6 shadow-sm">{{ fila.casos_hechos }}</span></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="text-center text-muted py-5"><i class="bi bi-folder-x fs-1 d-block mb-3 text-secondary"></i>No hay registros históricos en los parámetros seleccionados.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- SCRIPT DEL GRÁFICO: convierte los datos del servidor en una gráfica tipo dona para visualizar carga. -->
+<div id="chart-data" data-labels='{{ chart_labels|tojson|safe }}' data-values='{{ chart_values|tojson|safe }}' style="display:none;"></div>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const chartDataEl = document.getElementById('chart-data');
+    const chartLabels = chartDataEl ? JSON.parse(chartDataEl.dataset.labels || '[]') : [];
+    const chartValues = chartDataEl ? JSON.parse(chartDataEl.dataset.values || '[]') : [];
+    const formattedChartLabels = chartLabels.map((label, index) => `${label} (${chartValues[index] || 0})`);
+
+    if (chartLabels.length && chartValues.length) {
+      const ctx = document.getElementById('statsPieChart');
+      if (ctx) {
+        new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: formattedChartLabels,
+            datasets: [{
+              data: chartValues,
+              backgroundColor: [
+                '#0b63a7', '#e0725a', '#198754', '#0dcaf0', '#ffc107', '#6c757d', '#20c997', '#dc3545'
+              ],
+              borderWidth: 2,
+              borderColor: 'transparent',
+              hoverOffset: 6
+            }],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: { padding: 20, font: { family: 'Inter', size: 13 } }
+              },
+              tooltip: {
+                padding: 12,
+                cornerRadius: 8,
+                bodyFont: { size: 14 }
+              }
+            },
+            cutout: '65%'
+          }
+        });
+      }
+    }
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="favicon">
+  <rect width="64" height="64" rx="12" ry="12" fill="#0b63a7"/>
+  <g transform="translate(8 8) scale(0.75)">
+    <path d="M30 2c-1.1 0-2 .9-2 2v9.4l-1.4 1.4C25.1 15.5 24 17.2 24 19v9c0 2.8 2.2 5 5 5h9c1.8 0 3.5-1.1 4.2-2.6L47.6 29H57c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H30z" fill="#f8f9fa"/>
+    <path d="M15 31c-3.3 0-6 2.7-6 6v15c0 3.3 2.7 6 6 6h18c3.3 0 6-2.7 6-6V37c0-3.3-2.7-6-6-6H15zm0 4h18c1.1 0 2 .9 2 2v15c0 1.1-.9 2-2 2H15c-1.1 0-2-.9-2-2V37c0-1.1.9-2 2-2z" fill="#f8f9fa"/>
+    <path d="M24 14.8l6.8 6.8-2.8 2.8-6.8-6.8 2.8-2.8z" fill="#0b63a7"/>
+    <path d="M35.8 21.6l2 2-11.2 11.2-2-2L35.8 21.6z" fill="#0b63a7"/>
+    <path d="M18 50h8v2h-8z" fill="#0b63a7"/>
+  </g>
+</svg>
