@@ -15,4 +15,7 @@ SQLAlchemy==2.0.23
 typing_extensions==4.8.0
 Werkzeug==2.3.7
 openpyxl==3.1.2
+<<<<<<< HEAD
 fpdf==1.7.2
+=======
+>>>>>>> eef8e089ed33c615ec8eff79932e4dd9bc2e08f5
